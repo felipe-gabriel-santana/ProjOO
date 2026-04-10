@@ -2,15 +2,43 @@ export interface Notify{
     send(mensagem: string):void;
 }
 
-export class email implements Notify{
+class NotifyProxy implements Notify {
+    constructor(private original: Notify) {}
+
+    send(mensagem: string): void {
+        console.log("[LOG] Enviando mensagem:", mensagem);
+        this.original.send(mensagem);
+    }
+}
+
+export class Email implements Notify{
     send(mensagem: string): void {
         console.log("EMAIL", mensagem);
     }
 }
 
-export class sms implements Notify{
+export class Sms implements Notify{
     send(mensagem: string) {
         console.log("SMS", mensagem);
+    }
+}
+
+export class SmsLegado{
+    enviarSMS(mensagem: string) {
+        console.log("SMS LEGADO", mensagem);
+    }
+}
+
+class AdaptadorSMSLegado implements Notify {
+    private mensageiro: SmsLegado;
+
+    constructor(mensageiro: SmsLegado) {
+        this.mensageiro = mensageiro;
+    }
+
+    send(mensagem:string): void {
+        mensagem = "Legado - "+mensagem;
+        this.mensageiro.enviarSMS(mensagem);
     }
 }
 
@@ -22,7 +50,7 @@ export class push implements Notify{
 
 export class NotifyFactory{
     static create():Notify{
-        return new email();
+        return new Email();
     }
 }
 
@@ -43,8 +71,9 @@ export class Config{
     }
 }
 
-
 function main(){
+
+    //Exercício 1
     console.log('Teste Singleton - configurações devem ser iguais')
     const configuracao = Config.getInstancia();
     
@@ -54,9 +83,17 @@ function main(){
 
     console.log("Config tentativa de instancia 2: ", configuracao2.nomeApp, configuracao2.servidor, configuracao2.sendMax);
 
-    console.log('Teste Notify - deve ser enviado por email.');
+    console.log('Teste Notify - deve ser enviado pelo tipo configurado no factory.');
     const notificacao = NotifyFactory.create();
     notificacao.send("Mensagem Enviada");
+
+    //Exercício 2
+
+    const mensageiroLegado = new AdaptadorSMSLegado(new SmsLegado());
+    mensageiroLegado.send("Mensagem teste");
+
+    const notificacaoProxy = new NotifyProxy(notificacao);
+    notificacaoProxy.send("Mensagem com proxy");
 }
 
 main();
